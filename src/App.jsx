@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ChordDisplay from './components/ChordDisplay';
 import YouTubeViewer from './components/YouTubeViewer';
 import AutoScroll from './components/AutoScroll';
@@ -23,6 +23,31 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   
   const scrollRef = useRef(null);
+  
+  // Fetch songs from Turso on mount (if enabled)
+  useEffect(() => {
+    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
+      fetch('/api/songs')
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            // Transform DB rows to app song format
+            const remoteSongs = data.map(row => ({
+              id: row.id,
+              title: row.title || '',
+              artist: row.artist || '',
+              youtubeId: row.youtubeId || '',
+              melody: row.melody || '',
+              lyrics: row.lyrics || '',
+              createdAt: row.createdAt || new Date().toISOString()
+            }));
+            setSongs(remoteSongs);
+            setSelectedSong(remoteSongs[0]);
+          }
+        })
+        .catch(err => console.warn('Failed to fetch from Turso:', err));
+    }
+  }, []);
   
   // Transpose handlers
   const handleTranspose = (value) => {
