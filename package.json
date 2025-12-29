@@ -1,8 +1,11 @@
 {
-  "name": "ronz-chord-pro-v3",
+  "name": "ronz-chord-pro",
   "private": true,
-  "version": "3.0.0",
+  "version": "2.0.0",
   "type": "module",
+  "description": "Professional chord and lyrics application with transpose, autoscroll, YouTube integration, and set list management",
+  "author": "RoNz",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,19 +13,12 @@
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "firebase": "^11.1.0",
-    "lucide-react": "^0.284.0",
-    "clsx": "^2.0.0",
-    "tailwind-merge": "^1.14.0"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
-    "@vitejs/plugin-react": "^4.0.3",
-    "autoprefixer": "^10.4.14",
-    "postcss": "^8.4.27",
-    "tailwindcss": "^3.3.3",
-    "vite": "^4.4.5"
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.0.8"
   }
 }
