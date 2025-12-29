@@ -21,6 +21,7 @@ function App() {
   const [editingSong, setEditingSong] = useState(null);
   const [showSetListManager, setShowSetListManager] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dbStatus, setDbStatus] = useState({ enabled: import.meta.env.VITE_TURSO_SYNC === 'true', ok: null });
   
   const scrollRef = useRef(null);
   
@@ -51,6 +52,18 @@ function App() {
           }
         })
         .catch(err => console.warn('Failed to fetch from Turso:', err));
+    }
+  }, []);
+
+  // Check DB status (if enabled)
+  useEffect(() => {
+    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
+      fetch('/api/status')
+        .then(res => res.json())
+        .then(data => setDbStatus({ enabled: true, ok: !!data.ok }))
+        .catch(() => setDbStatus({ enabled: true, ok: false }));
+    } else {
+      setDbStatus({ enabled: false, ok: null });
     }
   }, []);
   
@@ -358,7 +371,12 @@ function App() {
               </label>
             </div>
             <div className="db-info">
-              <small>{songs.length} lagu • {setLists.length} set list</small>
+              <small>
+                {songs.length} lagu • {setLists.length} set list
+                {dbStatus.enabled && (
+                  <> • DB: {dbStatus.ok ? 'Online' : 'Offline'}</>
+                )}
+              </small>
             </div>
           </div>
         </aside>
