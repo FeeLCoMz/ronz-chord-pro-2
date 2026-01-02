@@ -6,13 +6,13 @@ import AutoScroll from './components/AutoScroll';
 import SongForm from './components/SongForm';
 import SetListManager from './components/SetListManager';
 import DatabaseStatus from './components/DatabaseStatus';
-import { useLocalStorage } from './hooks/useLocalStorage';
+// import { useLocalStorage } from './hooks/useLocalStorage';
 import { initialSongs, initialSetLists } from './data/songs';
 import './App.css';
 
 function App() {
-  const [songs, setSongs] = useLocalStorage('ronz-songs', initialSongs);
-  const [setLists, setSetLists] = useLocalStorage('ronz-setlists', initialSetLists);
+  const [songs, setSongs] = useState([]);
+  const [setLists, setSetLists] = useState([]);
   const [selectedSong, setSelectedSong] = useState(songs[0]);
   const [transpose, setTranspose] = useState(0);
   const [autoScrollActive, setAutoScrollActive] = useState(false);
@@ -31,32 +31,21 @@ function App() {
   
   // Fetch songs and setlists from Turso on mount (if enabled)
   useEffect(() => {
-    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
-      Promise.all([
-        fetch('/api/songs').then(res => res.json()),
-        fetch('/api/setlists').then(res => res.json())
-      ])
-        .then(([songsData, setlistsData]) => {
-          if (Array.isArray(songsData) && songsData.length > 0) {
-            const remoteSongs = songsData.map(row => ({
-              id: row.id,
-              title: row.title || '',
-              artist: row.artist || '',
-              youtubeId: row.youtubeId || '',
-              melody: row.melody || '',
-              lyrics: row.lyrics || '',
-              createdAt: row.createdAt || new Date().toISOString()
-            }));
-            setSongs(remoteSongs);
-            setSelectedSong(remoteSongs[0]);
-          }
-
-          if (Array.isArray(setlistsData) && setlistsData.length > 0) {
-            setSetLists(setlistsData);
-          }
-        })
-        .catch(err => console.warn('Failed to fetch from Turso:', err));
-    }
+    // Always fetch from Turso
+    Promise.all([
+      fetch('/api/songs').then(res => res.json()),
+      fetch('/api/setlists').then(res => res.json())
+    ])
+      .then(([songsData, setlistsData]) => {
+        if (Array.isArray(songsData) && songsData.length > 0) {
+          setSongs(songsData);
+          setSelectedSong(songsData[0]);
+        }
+        if (Array.isArray(setlistsData) && setlistsData.length > 0) {
+          setSetLists(setlistsData);
+        }
+      })
+      .catch(err => console.warn('Failed to fetch from Turso:', err));
   }, []);
 
   const refreshDbStatus = () => {
@@ -101,43 +90,26 @@ function App() {
     const isEditMode = !!editingSong;
     const songId = isEditMode ? editingSong.id : Date.now().toString();
     const updatedSong = { ...songData, id: songId };
-
-    // Update UI immediately
-    if (isEditMode) {
-      setSongs(prev => prev.map(song => 
-        song.id === songId ? updatedSong : song
-      ));
-    } else {
-      setSongs(prev => [...prev, updatedSong]);
-    }
-    setSelectedSong(updatedSong);
-    
-    // Sync to database if enabled
-    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
-      try {
-        const method = isEditMode ? 'PUT' : 'POST';
-        const endpoint = isEditMode ? `/api/songs/${songId}` : '/api/songs';
-        
-        const response = await fetch(endpoint, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedSong)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error(`Failed to ${isEditMode ? 'update' : 'add'} song to database:`, errorData);
-          alert(`⚠️ Lagu disimpan secara lokal, tapi gagal sync ke database. Coba lagi dengan tombol "☁️ Sync ke DB"`);
-        } else {
-          // Successfully saved to database
-          console.log(`Song ${isEditMode ? 'updated' : 'created'} in database:`, songId);
-        }
-      } catch (error) {
-        console.error('Database sync error:', error);
-        alert(`⚠️ Lagu disimpan secara lokal, tapi gagal sync ke database: ${error.message}`);
+    try {
+      const method = isEditMode ? 'PUT' : 'POST';
+      const endpoint = isEditMode ? `/api/songs/${songId}` : '/api/songs';
+      const response = await fetch(endpoint, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedSong)
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        alert(`Gagal menyimpan lagu ke database: ${errorData.error || response.status}`);
+        return;
       }
+      // Refresh songs from DB
+      const songsData = await fetch('/api/songs').then(res => res.json());
+      setSongs(songsData);
+      setSelectedSong(updatedSong);
+    } catch (error) {
+      alert(`Gagal menyimpan lagu ke database: ${error.message}`);
     }
-
     setShowSongForm(false);
     if (isEditMode) setEditingSong(null);
     setTranspose(0);
@@ -148,95 +120,88 @@ function App() {
     setShowSongForm(true);
   };
 
-  const handleDeleteSong = (songId) => {
+  const handleDeleteSong = async (songId) => {
     if (!confirm('Hapus lagu ini?')) return;
-    
-    setSongs(prev => prev.filter(song => song.id !== songId));
-    // Sync delete to Turso (optional)
-    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
-      fetch(`/api/songs/${songId}`, { method: 'DELETE' }).catch(() => {});
-    }
-    
-    // Remove from all setlists
-    setSetLists(prev => prev.map(sl => ({
-      ...sl,
-      songs: sl.songs.filter(id => id !== songId)
-    })));
-    
-    // Update selected song if deleted
-    if (selectedSong?.id === songId) {
-      const remainingSongs = songs.filter(song => song.id !== songId);
-      setSelectedSong(remainingSongs[0] || null);
+    try {
+      await fetch(`/api/songs/${songId}`, { method: 'DELETE' });
+      // Refresh songs and setlists from DB
+      const [songsData, setlistsData] = await Promise.all([
+        fetch('/api/songs').then(res => res.json()),
+        fetch('/api/setlists').then(res => res.json())
+      ]);
+      setSongs(songsData);
+      setSetLists(setlistsData);
+      if (selectedSong?.id === songId) {
+        setSelectedSong(songsData[0] || null);
+      }
+    } catch (error) {
+      alert('Gagal menghapus lagu dari database.');
     }
   };
 
   // SetList handlers
-  const handleCreateSetList = (name) => {
+  const handleCreateSetList = async (name) => {
     const newSetList = {
       id: Date.now(),
       name,
       songs: [],
       createdAt: new Date().toISOString()
     };
-    setSetLists(prev => [...prev, newSetList]);
-    // Sync create to Turso (optional)
-    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
-      fetch('/api/setlists', {
+    try {
+      await fetch('/api/setlists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newSetList)
-      }).catch(() => {});
+      });
+      const setlistsData = await fetch('/api/setlists').then(res => res.json());
+      setSetLists(setlistsData);
+    } catch (error) {
+      alert('Gagal membuat setlist di database.');
     }
   };
   
-  const handleDeleteSetList = (id) => {
-    setSetLists(prev => prev.filter(sl => sl.id !== id));
-    if (currentSetList === id) {
-      setCurrentSetList(null);
-    }
-    // Sync delete to Turso (optional)
-    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
-      fetch(`/api/setlists/${id}`, { method: 'DELETE' }).catch(() => {});
-    }
-  };
-  
-  const handleAddSongToSetList = (setListId, songId) => {
-    setSetLists(prev => prev.map(sl => {
-      if (sl.id === setListId && !sl.songs.includes(songId)) {
-        return { ...sl, songs: [...sl.songs, songId] };
+  const handleDeleteSetList = async (id) => {
+    try {
+      await fetch(`/api/setlists/${id}`, { method: 'DELETE' });
+      const setlistsData = await fetch('/api/setlists').then(res => res.json());
+      setSetLists(setlistsData);
+      if (currentSetList === id) {
+        setCurrentSetList(null);
       }
-      return sl;
-    }));
-    // Sync update to Turso (optional)
-    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
-      const setList = setLists.find(sl => sl.id === setListId);
-      if (setList) {
-        fetch(`/api/setlists/${setListId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...setList, songs: [...setList.songs, songId] })
-        }).catch(() => {});
-      }
+    } catch (error) {
+      alert('Gagal menghapus setlist dari database.');
     }
   };
   
-  const handleRemoveSongFromSetList = (setListId, songId) => {
-    setSetLists(prev => prev.map(sl => {
-      if (sl.id === setListId) {
-        return { ...sl, songs: sl.songs.filter(id => id !== songId) };
-      }
-      return sl;
-    }));
-    // Sync update to Turso (optional)
-    if (import.meta.env.VITE_TURSO_SYNC === 'true') {
-      const setList = setLists.find(sl => sl.id === setListId);
-      if (setList) {
-        fetch(`/api/setlists/${setListId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...setList, songs: setList.songs.filter(id => id !== songId) })
-        }).catch(() => {});
-      }
+  const handleAddSongToSetList = async (setListId, songId) => {
+    const setList = setLists.find(sl => sl.id === setListId);
+    if (!setList || setList.songs.includes(songId)) return;
+    try {
+      await fetch(`/api/setlists/${setListId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...setList, songs: [...setList.songs, songId] })
+      });
+      const setlistsData = await fetch('/api/setlists').then(res => res.json());
+      setSetLists(setlistsData);
+    } catch (error) {
+      alert('Gagal menambah lagu ke setlist di database.');
+    }
+  };
+  
+  const handleRemoveSongFromSetList = async (setListId, songId) => {
+    const setList = setLists.find(sl => sl.id === setListId);
+    if (!setList) return;
+    try {
+      await fetch(`/api/setlists/${setListId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...setList, songs: setList.songs.filter(id => id !== songId) })
+      });
+      const setlistsData = await fetch('/api/setlists').then(res => res.json());
+      setSetLists(setlistsData);
+    } catch (error) {
+      alert('Gagal menghapus lagu dari setlist di database.');
     }
   };
   
