@@ -171,6 +171,15 @@ describe("chordUtils", () => {
     expect(instruments).toEqual(['Synth Saw', 'Gitar Dist']);
   });
 
+  test("extractDetectedInstrumentsFromLyrics splits comma-delimited instrument labels even with a trailing colon", () => {
+    const instruments = extractDetectedInstrumentsFromLyrics([
+      'Gitar, Organ:',
+      'Piano, Synth Saw:',
+    ].join('\n'));
+
+    expect(instruments).toEqual(['Gitar', 'Organ', 'Piano', 'Synth Saw']);
+  });
+
   test("extractDetectedInstrumentsFromLyrics recognizes synth-family variants as a single instrument", () => {
     const instruments = extractDetectedInstrumentsFromLyrics([
       'Synth Square:',

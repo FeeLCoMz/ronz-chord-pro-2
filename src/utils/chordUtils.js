@@ -166,10 +166,10 @@ const findInlineInstrumentMatch = (candidate = '') => {
 
   const segments = splitInstrumentCandidateParts(normalized);
   if (segments.length > 1) {
-    for (const segment of segments) {
-      const match = findInlineInstrumentMatch(segment);
-      if (match) return match;
-    }
+    const matches = segments
+      .map((segment) => findInlineInstrumentMatch(segment))
+      .filter(Boolean);
+    if (matches.length) return matches[0];
     return false;
   }
 
@@ -302,6 +302,11 @@ const mergeInstrumentPhraseTokens = (tokens = []) => {
     const value = trimmed.replace(/[.,:;]+$/g, '').trim();
     if (!value || !instrumentKeywords.includes(value.toLowerCase())) {
       merged.push(token);
+      continue;
+    }
+
+    if (/[;,]$/.test(trimmed)) {
+      merged.push(value);
       continue;
     }
 
@@ -742,7 +747,7 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
   const scanTextCandidates = (text = '') => {
     if (typeof text !== 'string' || !text.trim()) return;
 
-    const segments = text
+      const segments = text
       .split(/\s*(?:,|;|\/)\s*/)
       .map((segment) => segment.trim())
       .filter(Boolean);
