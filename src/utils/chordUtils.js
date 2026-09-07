@@ -139,11 +139,39 @@ const matchInlineInstrumentLabel = (candidate = '') => {
   });
 };
 
+const splitInstrumentCandidateParts = (candidate = '') => {
+  if (typeof candidate !== 'string') return [];
+
+  return String(candidate || '')
+    .split(/\s*(?:,|;|\/)\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+};
+
 const findInlineInstrumentMatch = (candidate = '') => {
   if (typeof candidate !== 'string') return false;
 
   const normalized = String(candidate || '').trim();
   if (!normalized) return false;
+
+  const beforeColon = normalized.split(':', 1)[0]?.trim();
+  if (beforeColon && normalized.includes(':')) {
+    const remainder = normalized.slice(normalized.indexOf(':') + 1).trim();
+    const beforeColonMatch = findInlineInstrumentMatch(beforeColon);
+    if (beforeColonMatch) {
+      if (!remainder || !/[a-z]/i.test(remainder)) return beforeColonMatch;
+      if (remainder && !matchInlineInstrumentLabel(remainder)) return beforeColonMatch;
+    }
+  }
+
+  const segments = splitInstrumentCandidateParts(normalized);
+  if (segments.length > 1) {
+    for (const segment of segments) {
+      const match = findInlineInstrumentMatch(segment);
+      if (match) return match;
+    }
+    return false;
+  }
 
   const words = normalized.split(/\s+/).filter(Boolean);
   if (words.length > 1) {
@@ -151,16 +179,9 @@ const findInlineInstrumentMatch = (candidate = '') => {
     const firstWordMatch = instrumentKeywords.includes(firstWord);
     if (firstWordMatch) {
       const trailingWords = words.slice(1).map((word) => word.replace(/[.,;:]/g, '').trim()).filter(Boolean);
-      const trailingDescriptorCount = trailingWords.filter((word) => {
-        const cleaned = word.toLowerCase().replace(/[^a-z0-9]/g, '');
-        return INSTRUMENT_DESCRIPTOR_SUFFIXES.has(cleaned) || cleaned === 'fillin';
-      }).length;
-
-      if (trailingWords.length && trailingDescriptorCount === trailingWords.length) {
+      if (trailingWords.length) {
         return normalized.replace(/[;:]+$/g, '').trim();
       }
-
-      return normalized;
     }
 
     const containsAmpersand = normalized.includes('&');
@@ -251,12 +272,15 @@ const splitInlineTokens = (text = '') => {
 };
 
 const INSTRUMENT_DESCRIPTOR_SUFFIXES = new Set([
-  'dist', 'distortion', 'saw', 'sawtooth', 'pad', 'warm', 'bright', 'dark', 'clean', 'mono', 'stereo', 'ambient', 'wave', 'pluck', 'bass', 'stac', 'staccato'
+  'dist', 'distortion', 'saw', 'sawtooth', 'square', 'triangle', 'pulse', 'sine', 'wave', 'pad', 'warm', 'bright', 'dark', 'clean', 'mono', 'stereo', 'ambient', 'pluck', 'bass', 'sub', 'noise', 'perc', 'percussion', 'stac', 'staccato'
 ]);
 
-const INSTRUMENT_PHRASE_SUFFIXES = new Set([
-  'dist', 'distortion', 'saw', 'sawtooth', 'pad', 'warm', 'bright', 'dark', 'clean', 'mono', 'stereo', 'ambient', 'wave', 'pluck', 'stac', 'staccato'
-]);
+const isGenericInstrumentSuffix = (value = '') => {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed || /[,&]/.test(trimmed)) return false;
+  return !/^\s*$/.test(trimmed);
+};
 
 const mergeInstrumentPhraseTokens = (tokens = []) => {
   if (!Array.isArray(tokens)) return [];
@@ -281,6 +305,11 @@ const mergeInstrumentPhraseTokens = (tokens = []) => {
       continue;
     }
 
+    if (/:$/.test(trimmed)) {
+      merged.push(value);
+      continue;
+    }
+
     let nextIndex = index + 1;
     let mergedPhrase = value;
     let didMerge = false;
@@ -300,16 +329,28 @@ const mergeInstrumentPhraseTokens = (tokens = []) => {
 
       const cleanedNext = nextValue.replace(/[.,;:]+$/g, '').trim();
       if (!cleanedNext) {
+        if (/[,&;:]$/.test(nextValue)) break;
         nextIndex += 1;
         continue;
       }
 
       const normalizedSuffix = cleanedNext.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (INSTRUMENT_PHRASE_SUFFIXES.has(normalizedSuffix)) {
+      if (instrumentKeywords.includes(value.toLowerCase()) && isGenericInstrumentSuffix(cleanedNext)) {
         mergedPhrase = `${mergedPhrase} ${cleanedNext}`;
         didMerge = true;
         index = nextIndex;
-        break;
+        if (/[,&;:]$/.test(nextValue)) break;
+        nextIndex += 1;
+        continue;
+      }
+
+      if (INSTRUMENT_DESCRIPTOR_SUFFIXES.has(normalizedSuffix)) {
+        mergedPhrase = `${mergedPhrase} ${cleanedNext}`;
+        didMerge = true;
+        index = nextIndex;
+        if (/[,&;:]$/.test(nextValue)) break;
+        nextIndex += 1;
+        continue;
       }
 
       break;
@@ -702,7 +743,7 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
     if (typeof text !== 'string' || !text.trim()) return;
 
     const segments = text
-      .split(/[\/,&;]+/)
+      .split(/\s*(?:,|;|\/)\s*/)
       .map((segment) => segment.trim())
       .filter(Boolean);
 
@@ -741,23 +782,33 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
         continue;
       }
 
-      let suffix = '';
+      let suffixParts = [];
       for (let nextIndex = index + 1; nextIndex < tokens.length; nextIndex += 1) {
         const nextToken = tokens[nextIndex];
         if (!nextToken || typeof nextToken.token !== 'string') continue;
+
         const nextValue = nextToken.token.trim();
         if (!nextValue || /^\s+$/.test(nextToken.token) || /^\s*$/.test(nextValue)) continue;
-        if (/^[,;]$/.test(nextValue)) continue;
         if (/^[\(\)]$/.test(nextValue)) continue;
+
         const candidate = nextValue.replace(/[.,;:]+$/g, '').trim();
-        if (!candidate) continue;
-        const normalized = candidate.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (!INSTRUMENT_DESCRIPTOR_SUFFIXES.has(normalized)) continue;
-        suffix = candidate;
-        break;
+        if (!candidate) {
+          if (/[,&;:]$/.test(nextValue)) break;
+          continue;
+        }
+        if (isCueMarkKeyword(candidate)) break;
+        if (matchInlineInstrumentLabel(candidate)) break;
+
+        suffixParts.push(candidate);
+        if (/[,&;:]$/.test(nextValue)) break;
       }
 
-      merged.push(suffix ? `${keyword} ${suffix}` : keyword);
+      if (suffixParts.length) {
+        merged.push(`${keyword} ${suffixParts.join(' ')}`);
+        continue;
+      }
+
+      merged.push(keyword);
     }
 
     return merged;

@@ -171,6 +171,29 @@ describe("chordUtils", () => {
     expect(instruments).toEqual(['Synth Saw', 'Gitar Dist']);
   });
 
+  test("extractDetectedInstrumentsFromLyrics recognizes synth-family variants as a single instrument", () => {
+    const instruments = extractDetectedInstrumentsFromLyrics([
+      'Synth Square:',
+      'Synth Pluck:',
+      'Synth Perc:',
+      'Gitar Dist, Synth Square:',
+    ].join('\n'));
+
+    expect(instruments).toEqual(['Synth Square', 'Synth Pluck', 'Synth Perc', 'Gitar Dist']);
+  });
+
+  test("extractDetectedInstrumentsFromLyrics treats any non-comma postfix after an instrument as part of the same instrument", () => {
+    const instruments = extractDetectedInstrumentsFromLyrics([
+      'Synth Arp:',
+      'Synth Funky Bass:',
+      'Piano Warm:',
+      'Gitar Dist, Synth Warm Flute:',
+      'Guitar Electro, Piano Classic:',
+    ].join('\n'));
+
+    expect(instruments).toEqual(['Synth Arp', 'Synth Funky Bass', 'Piano Warm', 'Gitar Dist', 'Synth Warm Flute', 'Guitar Electro', 'Piano Classic']);
+  });
+
   test("parseSection detects modulation lines", () => {
     expect(parseSection('Modulation: G')).toEqual({ type: 'modulation', label: 'G' });
     expect(parseSection('Key change: A')).toEqual({ type: 'modulation', label: 'A' });
