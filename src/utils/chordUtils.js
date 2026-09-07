@@ -149,7 +149,19 @@ const findInlineInstrumentMatch = (candidate = '') => {
   if (words.length > 1) {
     const firstWord = words[0].replace(/[.,]/g, '').toLowerCase();
     const firstWordMatch = instrumentKeywords.includes(firstWord);
-    if (firstWordMatch) return normalized;
+    if (firstWordMatch) {
+      const trailingWords = words.slice(1).map((word) => word.replace(/[.,;:]/g, '').trim()).filter(Boolean);
+      const trailingDescriptorCount = trailingWords.filter((word) => {
+        const cleaned = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return INSTRUMENT_DESCRIPTOR_SUFFIXES.has(cleaned) || cleaned === 'fillin';
+      }).length;
+
+      if (trailingWords.length && trailingDescriptorCount === trailingWords.length) {
+        return normalized.replace(/[;:]+$/g, '').trim();
+      }
+
+      return normalized;
+    }
 
     const containsAmpersand = normalized.includes('&');
     const hasKeywordInPhrase = words.some((word) => {
@@ -237,6 +249,81 @@ const splitInlineTokens = (text = '') => {
   const regex = /\s+|\([^)]*\)|\S+/g;
   return text.match(regex) || [];
 };
+
+const INSTRUMENT_DESCRIPTOR_SUFFIXES = new Set([
+  'dist', 'distortion', 'saw', 'sawtooth', 'pad', 'warm', 'bright', 'dark', 'clean', 'mono', 'stereo', 'ambient', 'wave', 'pluck', 'bass', 'stac', 'staccato'
+]);
+
+const INSTRUMENT_PHRASE_SUFFIXES = new Set([
+  'dist', 'distortion', 'saw', 'sawtooth', 'pad', 'warm', 'bright', 'dark', 'clean', 'mono', 'stereo', 'ambient', 'wave', 'pluck', 'stac', 'staccato'
+]);
+
+const mergeInstrumentPhraseTokens = (tokens = []) => {
+  if (!Array.isArray(tokens)) return [];
+
+  const merged = [];
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (typeof token !== 'string') {
+      merged.push(token);
+      continue;
+    }
+
+    const trimmed = token.trim();
+    if (!trimmed || /^\s+$/.test(token)) {
+      merged.push(token);
+      continue;
+    }
+
+    const value = trimmed.replace(/[.,:;]+$/g, '').trim();
+    if (!value || !instrumentKeywords.includes(value.toLowerCase())) {
+      merged.push(token);
+      continue;
+    }
+
+    let nextIndex = index + 1;
+    let mergedPhrase = value;
+    let didMerge = false;
+
+    while (nextIndex < tokens.length) {
+      const nextToken = tokens[nextIndex];
+      if (typeof nextToken !== 'string' || /^\s+$/.test(nextToken)) {
+        nextIndex += 1;
+        continue;
+      }
+
+      const nextValue = nextToken.trim();
+      if (!nextValue) {
+        nextIndex += 1;
+        continue;
+      }
+
+      const cleanedNext = nextValue.replace(/[.,;:]+$/g, '').trim();
+      if (!cleanedNext) {
+        nextIndex += 1;
+        continue;
+      }
+
+      const normalizedSuffix = cleanedNext.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (INSTRUMENT_PHRASE_SUFFIXES.has(normalizedSuffix)) {
+        mergedPhrase = `${mergedPhrase} ${cleanedNext}`;
+        didMerge = true;
+        index = nextIndex;
+        break;
+      }
+
+      break;
+    }
+
+    merged.push(mergedPhrase);
+    if (didMerge) {
+      continue;
+    }
+  }
+
+  return merged;
+};
+
 
 const splitParenthesizedMultiChordToken = (token = '', transpose = 0) => {
   if (typeof token !== 'string') return [];
@@ -350,7 +437,7 @@ function parseLine(line, transpose) {
   if (isChordLine(line)) {
     return {
       type: 'chord',
-      tokens: splitInlineTokens(line).flatMap(token => {
+      tokens: mergeInstrumentPhraseTokens(splitInlineTokens(line)).flatMap(token => {
         if (/^\s+$/.test(token)) return [{ token, isSpace: true }];
         if (/^(\|:|:\||\[\:|\:\]|\|\||\|)$/.test(token)) return [{ token, isBarline: true }];
         const inlineCueMark = isInlineCueMarkToken(token);
@@ -386,7 +473,7 @@ function parseLine(line, transpose) {
   }
   return {
     type: 'lyrics',
-    tokens: splitInlineTokens(line).flatMap(token => {
+    tokens: mergeInstrumentPhraseTokens(splitInlineTokens(line)).flatMap(token => {
       if (/^\s+$/.test(token)) return [{ token, isSpace: true }];
       const inlineCueMark = isInlineCueMarkToken(token);
       if (inlineCueMark) return [{ token: inlineCueMark, isCueMark: true }];
@@ -553,6 +640,11 @@ function normalizeDetectedInstrumentName(candidate = '') {
 
   if (!cleaned) return '';
 
+  const beforeColon = cleaned.split(':')[0]?.trim();
+  if (beforeColon && beforeColon !== cleaned && matchInlineInstrumentLabel(beforeColon)) {
+    return beforeColon;
+  }
+
   const segments = cleaned
     .split(/[,&]/)
     .map((segment) => segment.replace(/:.*$/, '').trim())
@@ -560,6 +652,9 @@ function normalizeDetectedInstrumentName(candidate = '') {
 
   const matches = segments
     .map((segment) => {
+      const directMatch = findInlineInstrumentMatch(segment);
+      if (directMatch) return directMatch;
+
       const lower = segment.toLowerCase();
       const keywordMatch = REAL_INSTRUMENT_KEYWORDS.find((keyword) => {
         const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+');
@@ -567,8 +662,8 @@ function normalizeDetectedInstrumentName(candidate = '') {
       });
       if (!keywordMatch) return '';
 
-      const directMatch = segment.match(new RegExp(keywordMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+'), 'i'));
-      return directMatch ? directMatch[0] : keywordMatch;
+      const directKeywordMatch = segment.match(new RegExp(keywordMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[\\s_-]+'), 'i'));
+      return directKeywordMatch ? directKeywordMatch[0] : keywordMatch;
     })
     .map((value) => value.trim())
     .filter(Boolean);
@@ -627,6 +722,47 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
     });
   };
 
+  const getDetectedInstrumentFromTokens = (tokens = []) => {
+    const merged = [];
+    for (let index = 0; index < tokens.length; index += 1) {
+      const token = tokens[index];
+      if (!token || !token.isInstrument || typeof token.token !== 'string') {
+        continue;
+      }
+
+      const keyword = token.token.trim();
+      const directMatch = findInlineInstrumentMatch(keyword);
+      if (directMatch) {
+        merged.push(directMatch);
+        continue;
+      }
+
+      if (!keyword || !instrumentKeywords.includes(keyword.toLowerCase())) {
+        continue;
+      }
+
+      let suffix = '';
+      for (let nextIndex = index + 1; nextIndex < tokens.length; nextIndex += 1) {
+        const nextToken = tokens[nextIndex];
+        if (!nextToken || typeof nextToken.token !== 'string') continue;
+        const nextValue = nextToken.token.trim();
+        if (!nextValue || /^\s+$/.test(nextToken.token) || /^\s*$/.test(nextValue)) continue;
+        if (/^[,;]$/.test(nextValue)) continue;
+        if (/^[\(\)]$/.test(nextValue)) continue;
+        const candidate = nextValue.replace(/[.,;:]+$/g, '').trim();
+        if (!candidate) continue;
+        const normalized = candidate.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!INSTRUMENT_DESCRIPTOR_SUFFIXES.has(normalized)) continue;
+        suffix = candidate;
+        break;
+      }
+
+      merged.push(suffix ? `${keyword} ${suffix}` : keyword);
+    }
+
+    return merged;
+  };
+
   parsedLines.forEach((lineObj) => {
     if (lineObj?.type === 'instrument_patch' && typeof lineObj?.fields?.instrument === 'string') {
       addCandidate(lineObj.fields.instrument);
@@ -637,11 +773,7 @@ export function extractDetectedInstrumentsFromLyrics(lyricsText) {
     }
 
     if (Array.isArray(lineObj?.tokens)) {
-      lineObj.tokens.forEach((token) => {
-        if (token?.isInstrument) {
-          addCandidate(token.token);
-        }
-      });
+      getDetectedInstrumentFromTokens(lineObj.tokens).forEach((candidate) => addCandidate(candidate));
     }
 
     if (lineObj?.type === 'metadata' && typeof lineObj?.text === 'string') {

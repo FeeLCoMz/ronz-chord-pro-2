@@ -162,6 +162,15 @@ describe("chordUtils", () => {
     expect(instruments).toEqual(['Piano', 'Kenong', 'Gamelan']);
   });
 
+  test("extractDetectedInstrumentsFromLyrics keeps multi-word single instruments intact and splits comma lists", () => {
+    const instruments = extractDetectedInstrumentsFromLyrics([
+      'Synth Saw:',
+      'Gitar Dist, Synth Saw:',
+    ].join('\n'));
+
+    expect(instruments).toEqual(['Synth Saw', 'Gitar Dist']);
+  });
+
   test("parseSection detects modulation lines", () => {
     expect(parseSection('Modulation: G')).toEqual({ type: 'modulation', label: 'G' });
     expect(parseSection('Key change: A')).toEqual({ type: 'modulation', label: 'A' });
