@@ -287,6 +287,13 @@ describe("chordUtils", () => {
     expect(transposeChord('F#maj7/D', -1)).toBe('Fmaj7/C#');
   });
 
+  test("minor add9 chords are recognized and transposed", () => {
+    expect(isValidChord('Amadd9')).toBe(true);
+    const parsed = parseLines(['Amadd9'], 2);
+    expect(parsed[0].type).toBe('chord');
+    expect(parsed[0].tokens).toContainEqual({ token: 'Bmadd9', isChord: true });
+  });
+
   test("transpose chord tokens inside parentheses", () => {
     const parsed = parseLines(['Lirik (Am) masih ada'], 2);
     expect(parsed[0].tokens).toContainEqual({ token: '(Bm)', isChord: true });

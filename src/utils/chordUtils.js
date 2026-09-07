@@ -942,8 +942,8 @@ export function mergeDetectedTimestampsIntoMarkers(lyricsText, existingMarkers =
   return [...normalizedExisting, ...appended].sort((a, b) => a.time - b.time);
 }
 // Global regex untuk deteksi chord (standar, konsisten di semua fungsi)
-// Support: C, Cm, Cmaj7, Cm7b5, C7#11, Csus4, Cadd9, BbMajb5, C#maj7#11, dll
-const CHORD_REGEX = /^[A-G][#b]?(maj|min|dim|aug|sus|add|m)?(\d+)?([#b]\d+)*(\/[A-G][#b]?)?$/i;
+// Support: C, Cm, Cmaj7, Cm7b5, C7#11, Csus4, Cadd9, BbMajb5, C#maj7#11, Amadd9, dll
+const CHORD_REGEX = /^[A-G][#b]?(?:maj|min|dim|aug|sus|add|m)*(?:\d+)?(?:[#b]\d+)*(?:\/[A-G][#b]?)?$/i;
 const NO_CHORD_REGEX = /^(N\.C\.|NC|No\s*Chord|No\s*Chords?)$/i;
 
 /**
@@ -1574,8 +1574,8 @@ const NOTES_SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#',
 const NOTES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
 // Regex untuk mendeteksi chord (termasuk leading dash untuk passing chord dan trailing dots untuk durasi)
-// Support: Am, Gm-Gm, F..D#-D#, Dm..D#..F.., Am...., (Am), [C]
-const CHORD_REGEX_GLOBAL = /[\(\[\{]?-?([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?([#b][0-9]+)*(\/[A-G][#b]?)?(((\.{2,}|-)([A-G][#b]?)(maj7|maj9|min7|min9|m|maj|min|dim|aug|sus2|sus4|sus|add9|add)?([0-9]*)?([#b][0-9]+)*(\/[A-G][#b]?)?)*)(\.{2,})?[\)\]\}]?/g;
+// Support: Am, Gm-Gm, F..D#-D#, Dm..D#..F.., Am...., (Am), [C], Amadd9
+const CHORD_REGEX_GLOBAL = /[\(\[\{]?-?([A-G][#b]?(?:maj|min|dim|aug|sus|add|m)*(?:\d+)?(?:[#b]\d+)*(?:\/[A-G][#b]?)?)(((\.{2,}|-)([A-G][#b]?(?:maj|min|dim|aug|sus|add|m)*(?:\d+)?(?:[#b]\d+)*(?:\/[A-G][#b]?)?))*)(\.{2,})?[\)\]\}]?/g;
 
 const normalizeChordToken = (token) => {
   if (typeof token !== 'string') return token;
