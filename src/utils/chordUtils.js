@@ -100,7 +100,7 @@ const CUE_MARK_KEYWORDS = [
 
 const instrumentKeywords = [
   'gitar', 'guitar', 'bass', 'ukulele', 'mandolin', 'sape',
-  'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer', 'pianika', 'melodika',
+  'piano', 'keyboard', 'organ', 'synth', 'keys', 'synthesizer', 'pianika', 'melodika','epiano', 
   'brass', 'horn section', 'horns', 'trombone', 'tuba', 'euphonium', 'cornet',
   'saxophone', 'saksofon', 'sax', 'saxo', 'saxofon', 'trumpet', 'terompet', 'flute', 'suling', 'clarinet', 'klarinet', 'bansi',
   'violin', 'biola', 'cello', 'kontrabas', 'strings',
