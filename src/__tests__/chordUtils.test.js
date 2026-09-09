@@ -213,6 +213,11 @@ describe("chordUtils", () => {
     expect(parseSection('[Post-Chorus]')).toEqual({ type: 'structure', label: 'Post-Chorus' });
   });
 
+  test("parseSection detects instrumental labels", () => {
+    expect(parseSection('[Instrumental]')).toEqual({ type: 'structure', label: 'Instrumental' });
+    expect(parseSection('Instrumental:')).toEqual({ type: 'structure', label: 'Instrumental' });
+  });
+
   test("parseSection does not treat substring inside a word as structure", () => {
     expect(parseSection('stuck in reverse')).toBe(null);
   });

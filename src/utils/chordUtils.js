@@ -1307,7 +1307,7 @@ export function parseSection(line) {
     const displayLabel = annotation ? `${originalLabel} (${annotation})` : originalLabel;
     const labelLower = originalLabel.toLowerCase();
     // Daftar kata kunci struktur lagu
-    const structureKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain', 'pre-chorus', 'post-chorus', 'solo', 'musik'];
+    const structureKeywords = ['intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain', 'pre-chorus', 'post-chorus', 'solo', 'musik', 'instrumental'];
     const hasKeywordAsWholeWord = (text, keyword) => {
       const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const pattern = escaped.replace(/\s+/g, '[\\s_-]+');
@@ -1349,7 +1349,7 @@ const INSTRUMENT_PATCH_KEYS = new Set([
 
 const PRESET_CUE_SECTION_KEYWORDS = [
   'intro', 'verse', 'chorus', 'bridge', 'outro', 'interlude', 'coda', 'reff', 'refrain',
-  'pre-chorus', 'post-chorus', 'solo', 'musik', 'hook', 'drop', 'ending', 'ending tag',
+  'pre-chorus', 'post-chorus', 'solo', 'musik', 'instrumental', 'hook', 'drop', 'ending', 'ending tag',
   'keys', 'keyboard', 'guitar', 'gitar'
 ];
 
