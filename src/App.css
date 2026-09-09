@@ -706,17 +706,20 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
+  width: 100%;
   padding: 16px 20px;
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border-color);
   margin-bottom: 24px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .setlist-song-navigator-compact {
   gap: 8px;
   padding: 10px 12px;
   margin-bottom: 12px;
-  border-bottom: none;
+  border: 1px solid rgba(37, 99, 235, 0.2);
   border-radius: 999px;
   background: rgba(37, 99, 235, 0.1);
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
@@ -740,6 +743,10 @@
   justify-content: center;
   padding: 8px 16px;
   min-height: 42px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--primary-bg);
+  color: var(--text-primary);
   transition:
     opacity var(--transition-fast),
     cursor var(--transition-fast);
@@ -750,6 +757,10 @@
   justify-content: center;
   min-height: 42px;
   margin-left: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--primary-bg);
+  color: var(--text-primary);
 }
 
 .setlist-nav-open-list-btn-compact {
@@ -774,9 +785,10 @@
   gap: 12px;
   padding: 8px 20px;
   background: var(--primary-bg);
-  border-radius: 20px;
+  border-radius: 18px;
   border: 1px solid var(--border-color);
   font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 body.lyrics-mode .setlist-song-navigator-compact {
