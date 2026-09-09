@@ -18,7 +18,11 @@ export default function SongMidiProgramPanel({
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="song-midi-panel" role="region" aria-label="Preset Cue MIDI">
+    <div
+      className={`song-midi-panel${performanceMode ? ' song-midi-panel--performance' : ''}`}
+      role="region"
+      aria-label="Preset Cue MIDI"
+    >
       <div className="song-midi-panel-header">
         <ExpandButton
           isExpanded={isExpanded}

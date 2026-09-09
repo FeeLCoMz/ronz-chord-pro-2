@@ -6980,6 +6980,14 @@ body.dark-mode .cd-token {
   margin-bottom: 12px;
 }
 
+.song-midi-panel--performance {
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 16px;
+  box-shadow: none;
+  padding: 10px 12px;
+}
+
 .song-midi-panel-header {
   display: flex;
   align-items: center;
@@ -7107,9 +7115,68 @@ body.dark-mode .cd-token {
   }
 }
 
-.page-container.performance-mode .song-midi-panel {
+.page-container.performance-mode .song-midi-panel,
+.page-container.performance-mode .song-midi-panel--performance {
   margin-bottom: 10px;
   padding: 8px 10px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.page-container.performance-mode .song-midi-panel-header {
+  gap: 0.45rem;
+}
+
+.page-container.performance-mode .song-midi-panel .expand-button {
+  background: rgba(15, 23, 42, 0.02);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 12px;
+  box-shadow: none;
+  padding: 7px 10px;
+  font-size: 0.94rem;
+}
+
+.page-container.performance-mode .song-midi-panel .expand-button:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.04);
+  box-shadow: none;
+}
+
+.page-container.performance-mode .song-midi-panel .expand-button.expanded {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.page-container.performance-mode .song-midi-panel .expand-button-badge {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  box-shadow: none;
+}
+
+.page-container.performance-mode .song-midi-panel-controls {
+  margin-top: 6px;
+  gap: 0.5rem;
+}
+
+.page-container.performance-mode .song-midi-panel-info {
+  margin-top: 6px;
+  gap: 0.4rem;
+}
+
+.page-container.performance-mode .song-midi-panel-count,
+.page-container.performance-mode .song-midi-panel-cue,
+.page-container.performance-mode .song-midi-panel-message {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+}
+
+.page-container.performance-mode .song-midi-output-select,
+.page-container.performance-mode .song-midi-toggle-wrap,
+.page-container.performance-mode .song-midi-connect-btn {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(148, 163, 184, 0.12);
+  border-radius: 10px;
 }
 
 @media (max-width: 768px) {
@@ -10252,12 +10319,19 @@ body.lyrics-mode .song-lyrics-fullscreen-style-badge.mode-hidden {
   gap: 0.35rem;
   padding: 8px 10px;
   margin-bottom: 10px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  overflow-x: visible;
   -webkit-overflow-scrolling: touch;
   background: rgba(15, 23, 42, 0.04);
   border: 1px solid rgba(148, 163, 184, 0.14);
   border-radius: 12px;
+}
+
+@media (max-width: 640px) {
+  .page-container.performance-mode .song-lyrics-toolbar {
+    justify-content: center;
+    overflow-x: visible;
+  }
 }
 
 .page-container.performance-mode .song-lyrics-toolbar-group-fullscreen {
@@ -11735,14 +11809,16 @@ body.dark-mode .song-lyrics-fullscreen-style-badge.mode-number {
   .page-container.performance-mode .song-lyrics-toolbar {
     width: 100%;
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
-    overflow-x: auto;
+    overflow-x: visible;
+    justify-content: center;
   }
 
   .page-container.performance-mode .song-lyrics-toolbar-group {
     width: auto;
-    flex: 0 0 auto;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .page-container.performance-mode .song-lyrics-toolbar-group-autoscroll {

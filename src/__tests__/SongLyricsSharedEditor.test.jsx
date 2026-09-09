@@ -1145,6 +1145,29 @@ describe('Song lyrics shared editor rendering', () => {
     expect(container.querySelector('.song-midi-support-badge')).toBeFalsy();
   });
 
+  test('Given performance mode is active, Then the MIDI panel uses the compact performance layout class', async () => {
+    await act(async () => {
+      root.render(
+        <SongMidiProgramPanel
+          performanceMode={true}
+          isSupported={true}
+          isAccessGranted={true}
+          outputs={[]}
+          selectedOutputId=""
+          setSelectedOutputId={noop}
+          isEnabled={false}
+          setIsEnabled={noop}
+          requestAccess={noop}
+          cueCount={2}
+          autoCueLabel="Lead"
+          lastMessage="MIDI siap"
+        />
+      );
+    });
+
+    expect(container.querySelector('.song-midi-panel--performance')).toBeTruthy();
+  });
+
   test('Given performance mode is active, Then the YouTube media panel stays mounted but hidden', async () => {
     await act(async () => {
       root.render(
