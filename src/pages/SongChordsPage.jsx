@@ -772,57 +772,115 @@ export default function SongChordsPage({ song: songProp, performanceMode = false
 
   return (
     <div className={`page-container${performanceMode ? ' performance-mode' : ''}${lyricsMode ? ' lyrics-mode' : ''}`}> {/* Tambah class jika performanceMode */}
-      <SongChordsInfo
-        originalKey={song?.key || key || ''}
-        targetKey={key || song?.key || ''}
-        lyricsOriginalKey={lyricsMetaKey}
-        transpose={transpose}
-        setTranspose={setTranspose}
-        timeSignature={timeSignature}
-        tempo={tempo}
-        scrollSpeed={scrollSpeed}
-        setScrollSpeed={setScrollSpeed}
-        isMetronomeActive={isMetronomeActive}
-        setIsMetronomeActive={setIsMetronomeActive}
-        genre={genre}
-        arrangementStyle={arrangementStyle}
-        keyboardPatch={keyboardPatch}
-        detectedInstruments={detectedInstruments}
-        showSongInfo={showSongInfo}
-        setShowSongInfo={setShowSongInfo}
-        title={song.title}
-        artist={artist}
-        contributor={song.contributor}
-        performanceMode={performanceMode}
-        performanceKeyOverride={setlistSongData.key || ''}
-        lyricsMode={lyricsMode}
-        canEdit={can(PERMISSIONS.SONG_EDIT)}
-        onEdit={handleEdit}
-        onShare={() => handleShare(song, artist, setShareMessage)}
-        shareMessage={shareMessage}
-        masteredBy={song.masteredBy}
-        canMarkMastery={song.canMarkMastery}
-        isMasteredByCurrentUser={song.isMasteredByCurrentUser}
-        onToggleMastery={handleToggleMastery}
-        masteryUpdating={updatingMastery}
-        pianoRecommendation={pianoRecommendation}
-        onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
-      />
+      {performanceMode ? (
+        <div className="song-performance-top-panel">
+          <SongChordsInfo
+            originalKey={song?.key || key || ''}
+            targetKey={key || song?.key || ''}
+            lyricsOriginalKey={lyricsMetaKey}
+            transpose={transpose}
+            setTranspose={setTranspose}
+            timeSignature={timeSignature}
+            tempo={tempo}
+            scrollSpeed={scrollSpeed}
+            setScrollSpeed={setScrollSpeed}
+            isMetronomeActive={isMetronomeActive}
+            setIsMetronomeActive={setIsMetronomeActive}
+            genre={genre}
+            arrangementStyle={arrangementStyle}
+            keyboardPatch={keyboardPatch}
+            detectedInstruments={detectedInstruments}
+            showSongInfo={showSongInfo}
+            setShowSongInfo={setShowSongInfo}
+            title={song.title}
+            artist={artist}
+            contributor={song.contributor}
+            performanceMode={performanceMode}
+            performanceKeyOverride={setlistSongData.key || ''}
+            lyricsMode={lyricsMode}
+            canEdit={can(PERMISSIONS.SONG_EDIT)}
+            onEdit={handleEdit}
+            onShare={() => handleShare(song, artist, setShareMessage)}
+            shareMessage={shareMessage}
+            masteredBy={song.masteredBy}
+            canMarkMastery={song.canMarkMastery}
+            isMasteredByCurrentUser={song.isMasteredByCurrentUser}
+            onToggleMastery={handleToggleMastery}
+            masteryUpdating={updatingMastery}
+            pianoRecommendation={pianoRecommendation}
+            onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
+          />
 
-      <SongMidiProgramPanel
-        isSupported={isMidiSupported}
-        isAccessGranted={isMidiAccessGranted}
-        outputs={midiOutputs}
-        selectedOutputId={selectedOutputId}
-        setSelectedOutputId={setSelectedOutputId}
-        isEnabled={isMidiProgramChangeEnabled}
-        setIsEnabled={setIsMidiProgramChangeEnabled}
-        requestAccess={requestMidiAccess}
-        cueCount={midiProgramCues.length}
-        autoCueLabel={firstMidiCue?.label || ''}
-        lastMessage={midiLastMessage}
-        performanceMode={performanceMode}
-      />
+          <SongMidiProgramPanel
+            isSupported={isMidiSupported}
+            isAccessGranted={isMidiAccessGranted}
+            outputs={midiOutputs}
+            selectedOutputId={selectedOutputId}
+            setSelectedOutputId={setSelectedOutputId}
+            isEnabled={isMidiProgramChangeEnabled}
+            setIsEnabled={setIsMidiProgramChangeEnabled}
+            requestAccess={requestMidiAccess}
+            cueCount={midiProgramCues.length}
+            autoCueLabel={firstMidiCue?.label || ''}
+            lastMessage={midiLastMessage}
+            performanceMode={performanceMode}
+          />
+        </div>
+      ) : (
+        <>
+          <SongChordsInfo
+            originalKey={song?.key || key || ''}
+            targetKey={key || song?.key || ''}
+            lyricsOriginalKey={lyricsMetaKey}
+            transpose={transpose}
+            setTranspose={setTranspose}
+            timeSignature={timeSignature}
+            tempo={tempo}
+            scrollSpeed={scrollSpeed}
+            setScrollSpeed={setScrollSpeed}
+            isMetronomeActive={isMetronomeActive}
+            setIsMetronomeActive={setIsMetronomeActive}
+            genre={genre}
+            arrangementStyle={arrangementStyle}
+            keyboardPatch={keyboardPatch}
+            detectedInstruments={detectedInstruments}
+            showSongInfo={showSongInfo}
+            setShowSongInfo={setShowSongInfo}
+            title={song.title}
+            artist={artist}
+            contributor={song.contributor}
+            performanceMode={performanceMode}
+            performanceKeyOverride={setlistSongData.key || ''}
+            lyricsMode={lyricsMode}
+            canEdit={can(PERMISSIONS.SONG_EDIT)}
+            onEdit={handleEdit}
+            onShare={() => handleShare(song, artist, setShareMessage)}
+            shareMessage={shareMessage}
+            masteredBy={song.masteredBy}
+            canMarkMastery={song.canMarkMastery}
+            isMasteredByCurrentUser={song.isMasteredByCurrentUser}
+            onToggleMastery={handleToggleMastery}
+            masteryUpdating={updatingMastery}
+            pianoRecommendation={pianoRecommendation}
+            onApplyRecommendedTranspose={(relativeSteps) => setTranspose((prev) => prev + relativeSteps)}
+          />
+
+          <SongMidiProgramPanel
+            isSupported={isMidiSupported}
+            isAccessGranted={isMidiAccessGranted}
+            outputs={midiOutputs}
+            selectedOutputId={selectedOutputId}
+            setSelectedOutputId={setSelectedOutputId}
+            isEnabled={isMidiProgramChangeEnabled}
+            setIsEnabled={setIsMidiProgramChangeEnabled}
+            requestAccess={requestMidiAccess}
+            cueCount={midiProgramCues.length}
+            autoCueLabel={firstMidiCue?.label || ''}
+            lastMessage={midiLastMessage}
+            performanceMode={performanceMode}
+          />
+        </>
+      )}
 
       {!lyricsMode && youtubeId && !performanceMode && !isEditingLyrics && (
         <SongChordsMediaPanel

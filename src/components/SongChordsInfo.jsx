@@ -92,6 +92,9 @@ export default function SongChordsInfo({
   const recommendedTransposeText = recommendedTranspose > 0
     ? `+${recommendedTranspose}`
     : `${recommendedTranspose}`;
+  const compactRecommendedTransposeText = recommendedTranspose === 0
+    ? 'pas'
+    : (recommendedTranspose > 0 ? `+${recommendedTranspose}` : `${recommendedTranspose}`);
   const hasPerformanceKeyOverride = performanceMode && Boolean(performanceKeyOverride);
   const baseDisplayKey = hasPerformanceKeyOverride
     ? performanceKeyOverride
@@ -109,7 +112,9 @@ export default function SongChordsInfo({
 
   if (baseDisplayKey) {
     metadataItems.push(`Key: ${transposedDisplayKey}`);
-    if (performanceMode) {
+  }
+  if (performanceMode) {
+    if (baseDisplayKey) {
       performanceMetadataItems.push({
         key: 'key',
         icon: '🎹',
@@ -122,6 +127,30 @@ export default function SongChordsInfo({
             onTransposeChange={setTranspose}
             compact
           />
+        ),
+      });
+    }
+    if (showKeyEasyRecommendation) {
+      performanceMetadataItems.push({
+        key: 'easy-key',
+        render: (
+          <>
+            <span className="song-info-inline-icon" aria-hidden="true">🎹</span>
+            <span className="song-info-inline-label">Key Mudah</span>
+            <button
+              type="button"
+              className="btn btn-secondary song-info-piano-reco-btn song-info-inline-button"
+              onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
+              disabled={typeof onApplyRecommendedTranspose !== 'function' || pianoRecommendation.transposeFromCurrent === 0}
+              title="Terapkan key mudah"
+              aria-label="Gunakan key mudah yang disarankan"
+            >
+              {pianoRecommendation.recommendedKey}
+            </button>
+            <span className="song-info-inline-value">
+              {compactRecommendedTransposeText}
+            </span>
+          </>
         ),
       });
     }
@@ -154,12 +183,12 @@ export default function SongChordsInfo({
     const instrumentText = detectedInstrumentList.join(', ');
     metadataItems.push(`Instrumen: ${instrumentText}`);
     if (performanceMode) {
-      performanceMetadataItems.push({ key: 'instruments', icon: '🎼', text: instrumentText });
+      performanceMetadataItems.push({ key: 'instruments', icon: '🎼', text: instrumentText, fullWidth: true });
     }
   }
 
   return (
-    <div className="song-panel">
+    <div className={`song-panel${performanceMode ? ' song-panel-performance' : ''}`}>
       {/* Judul dan artis selalu di atas info lain */}
       {(title || artist || contributor || !performanceMode) && (
         <div className="song-title-artist-block">
@@ -199,6 +228,27 @@ export default function SongChordsInfo({
           {shareMessage && showActions && (
             <div className="info-text song-info-share-message">{shareMessage}</div>
           )}
+          {performanceMode && showMetadata && (
+            <div className="song-info-inline-strip song-info-priority">
+              <div className="song-info-inline-chip-list">
+                {performanceMetadataItems.map((item) => (
+                  <div
+                    key={item.key}
+                    className={`song-info-inline-chip${item.key === 'key' ? ' song-info-inline-chip-key' : ''}${item.fullWidth ? ' song-info-inline-chip-full' : ''}`}
+                  >
+                    {item.render ? (
+                      item.render
+                    ) : (
+                      <>
+                        <span className="song-info-inline-icon" aria-hidden="true">{item.icon}</span>
+                        <span className="song-info-inline-value">{item.text}</span>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
       {showActions && (
@@ -212,34 +262,16 @@ export default function SongChordsInfo({
           />
         </div>
       )}
-      {showMetadata && (
+      {!performanceMode && showMetadata && (
         <div className={`song-info-compact-grid ${showMinimalMetadata ? 'song-info-compact-grid-minimal' : ''}`}>
           {showMinimalMetadata ? (
             <>
-              {performanceMode ? (
-                <div className="song-info-item song-info-priority song-info-inline-strip">
-                  <div className="song-info-inline-chip-list">
-                    {performanceMetadataItems.map((item) => (
-                      <div key={item.key} className={`song-info-inline-chip${item.key === 'key' ? ' song-info-inline-chip-key' : ''}`}>
-                        {item.key === 'key' ? (
-                          item.render
-                        ) : (
-                          <>
-                            <span className="song-info-inline-icon" aria-hidden="true">{item.icon}</span>
-                            <span className="song-info-inline-value">{item.text}</span>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="song-info-item song-info-priority song-info-inline-strip">
-                  <span className="song-info-inline-text">
-                    {metadataItems.join(' • ')}
-                  </span>
-                </div>
-              )}
+              <div className="song-info-item song-info-priority song-info-inline-strip">
+                <span className="song-info-inline-text">
+                  {metadataItems.join(' • ')}
+                </span>
+              </div>
+              {!showKeyEasyRecommendation && null}
               {!performanceMode && showKeyEasyRecommendation && (
                 <div className="song-info-item song-info-piano-reco-item">
                   <span className="song-info-label">🎹 Key Mudah</span>
@@ -409,28 +441,6 @@ export default function SongChordsInfo({
               )}
             </>
           )}
-        </div>
-      )}
-      {performanceMode && showKeyEasyRecommendation && (
-        <div className="song-info-piano-reco-full">
-          <div className="song-info-label">🎹 Key Mudah</div>
-          <div className="song-info-piano-reco-full-body">
-            <button
-              type="button"
-              className="btn btn-secondary song-info-piano-reco-btn"
-              onClick={() => onApplyRecommendedTranspose?.(pianoRecommendation.transposeFromCurrent)}
-              disabled={typeof onApplyRecommendedTranspose !== 'function' || pianoRecommendation.transposeFromCurrent === 0}
-              title="Terapkan key mudah"
-              aria-label="Gunakan key mudah yang disarankan"
-            >
-              {pianoRecommendation.recommendedKey}
-            </button>
-            <span className="song-info-piano-reco-distance">
-              {pianoRecommendation.transposeFromCurrent === 0
-                ? 'Key dasar sudah cocok.'
-                : `Jarak dari key dasar: ${recommendedTransposeText} semitone`}
-            </span>
-          </div>
         </div>
       )}
     </div>

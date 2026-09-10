@@ -659,7 +659,8 @@ describe('Song lyrics shared editor rendering', () => {
     });
 
     expect(container.querySelector('.song-title-actions')).toBeFalsy();
-    expect(container.querySelector('.song-info-compact-grid')).toBeTruthy();
+    expect(container.querySelector('.song-title-artist-block > .song-info-inline-strip')).toBeTruthy();
+    expect(container.querySelector('.song-title-artist-block .song-info-compact-grid')).toBeFalsy();
     expect(container.textContent).toContain('Song A');
     expect(container.textContent).toContain('Artist A');
     expect(container.textContent).toContain('−');
@@ -777,9 +778,9 @@ describe('Song lyrics shared editor rendering', () => {
       );
     });
 
+    expect(container.querySelector('.song-title-artist-block .song-info-inline-strip')).toBeTruthy();
     expect(container.textContent).toContain('Key Mudah');
-    expect(container.textContent).toContain('Jarak dari key dasar');
-    expect(container.textContent).toContain('+2 semitone');
+    expect(container.textContent).toContain('+2');
 
     const keyButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.textContent?.trim() === 'C');
     expect(keyButton).toBeTruthy();
@@ -1363,7 +1364,7 @@ describe('Song lyrics shared editor rendering', () => {
     );
     expect(keyEasyButton).toBeTruthy();
     expect(container.textContent).toContain('Key Mudah');
-    expect(container.textContent).toContain('-2 semitone');
+    expect(container.textContent).toContain('-2');
 
     await act(async () => {
       keyEasyButton.click();
